@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use gtk::{glib, gio, prelude::*};
 use std::{fs::File, io::{prelude::*, BufReader}};
 use csv::ReaderBuilder;
