@@ -31,16 +31,16 @@ fn main() -> glib::ExitCode {
 }
 
 fn build_ui(application: &gtk::Application) {
-    let ui_src = include_str!("./ui/smoobu-mami.ui");
+    let ui_src = include_str!("./resources/ui/smoobu-mami.ui");
     let builder = gtk::Builder::from_string(ui_src);
 
     let window1 = builder
         .object::<gtk::ApplicationWindow>("window1")
         .expect("Couldn't get window");
     window1.set_application(Some(application));
-    /*let button1 = builder
+    let button1 = builder
         .object::<gtk::Button>("button1")
-        .expect("Couldn't get button");*/
+        .expect("Couldn't get button");
     let filedialog1 = builder
         .object::<gtk::FileDialog>("filedialog1")
         .expect("Couldn't get filedialog");
@@ -50,6 +50,9 @@ fn build_ui(application: &gtk::Application) {
     let dropdown1 = builder
         .object::<gtk::DropDown>("dropdown1")
         .expect("Couldn't get dropdown1");
+    let about1 = builder
+        .object::<gtk::AboutDialog>("about1")
+        .expect("Couldn't get about1");
 
     
     let dropdown2 = dropdown1.clone();
@@ -70,6 +73,9 @@ fn build_ui(application: &gtk::Application) {
         });
     })
     );
+    button1.connect_clicked(glib::clone!(@weak window1, @weak text_view => move |_| {
+        about1.present();
+    }));
 
 
     window1.present();
@@ -94,7 +100,16 @@ fn deserialize(contents: &mut String, selected: u32) -> String {
         reservas.push(record);
     }
 
-    reservas.sort_by(|a, b| fecha2int(&b.salida).cmp(&fecha2int(&a.salida)));
+    reservas.sort_by(|a, b| fecha2int(&b.llegada).cmp(&fecha2int(&a.llegada)));
+
+    for i in [reservas.len(), reservas.len()-1] {
+        if reservas[i-1].llegada[3..5].parse::<i32>().unwrap() != reservas[i-1].salida[3..5].parse::<i32>().unwrap() {
+            reservas.swap_remove(i-1);
+        }
+    }
+
+    reservas.reverse();
+
 
     for reser in reservas.iter_mut() {
         doomsday(&mut reser.llegada);
@@ -107,12 +122,11 @@ fn deserialize(contents: &mut String, selected: u32) -> String {
             }
             1 => {
                 if reser.apartamento == "Apartamentos Vegueta".to_string() {
-                    return_string.push_str(&format!("
-                        {} hasta {}\n
-                        {}, nombre: {}, huéspedes: {}\n
-                        {} || {}\n
-                        ", reser.llegada, reser.salida, reser.apartamento, reser.huésped, personas(&reser.adultos, &reser.niños), reser.teléfono, reser.portal));
+                    return_string.push_str(&format!("{} hasta {}\n{}, nombre: {}, huéspedes: {}\n{} || {}\n\n", reser.llegada, reser.salida, reser.apartamento, reser.huésped, personas(&reser.adultos, &reser.niños), reser.teléfono, reser.portal));
                 }
+            }
+            2 => {
+                return_string.push_str(&format!("{} hasta {}\n{}, nombre: {}, huéspedes: {}\n{} || {}\n\n", reser.llegada, reser.salida, reser.apartamento, reser.huésped, personas(&reser.adultos, &reser.niños), reser.teléfono, reser.portal));
             }
             _ => panic!(),
         }
